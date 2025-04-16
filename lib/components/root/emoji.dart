@@ -91,30 +91,6 @@ class Emoji extends HookWidget {
       Clipboard.setData(
         ClipboardData(text: emoji.emoji),
       );
-      SnackBar snackBar = SnackBar(
-        content: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.copy,
-              color: Theme.of(context).colorScheme.background,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              "Copied ${emoji.aliases.firstOrNull} ",
-            ),
-            Twemoji(
-              emoji: emoji.emoji,
-              height: 20,
-              width: 20,
-            ),
-          ],
-        ),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
       final keys = RawKeyboard.instance.keysPressed;
       const controls = [
         LogicalKeyboardKey.control,
