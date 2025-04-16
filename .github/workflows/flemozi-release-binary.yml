@@ -133,58 +133,58 @@ jobs:
           mv dist/**/flemozi-*-linux.rpm dist/Flemozi-linux-x86_64.rpm
           mv dist/**/flemozi-*-linux.AppImage dist/Flemozi-linux-x86_64.AppImage
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Flemozi-Release-Binaries
           path: dist/
 
-  upload:
-    runs-on: ubuntu-22.04
-    needs:
-      - linux
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: Flemozi-Release-Binaries
-          path: ./Flemozi-Release-Binaries
+  # upload:
+  #   runs-on: ubuntu-22.04
+  #   needs:
+  #     - linux
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: Flemozi-Release-Binaries
+  #         path: ./Flemozi-Release-Binaries
 
-      - name: Install dependencies
-        run: sudo apt-get install tree -y
+  #     - name: Install dependencies
+  #       run: sudo apt-get install tree -y
 
-      - name: Generate Checksums
-        run: |
-          tree .
-          md5sum Flemozi-Release-Binaries/* >> RELEASE.md5sum
-          sha256sum Flemozi-Release-Binaries/* >> RELEASE.sha256sum
-          sed -i 's|Flemozi-Release-Binaries/||' RELEASE.sha256sum RELEASE.md5sum
+  #     - name: Generate Checksums
+  #       run: |
+  #         tree .
+  #         md5sum Flemozi-Release-Binaries/* >> RELEASE.md5sum
+  #         sha256sum Flemozi-Release-Binaries/* >> RELEASE.sha256sum
+  #         sed -i 's|Flemozi-Release-Binaries/||' RELEASE.sha256sum RELEASE.md5sum
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: Flemozi-Release-Binaries
-          path: |
-            RELEASE.md5sum
-            RELEASE.sha256sum
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: Flemozi-Release-Binaries
+  #         path: |
+  #           RELEASE.md5sum
+  #           RELEASE.sha256sum
 
-      - name: Upload Release Binaries (stable)
-        if: ${{ !inputs.dry_run && inputs.channel == 'stable' }}
-        uses: ncipollo/release-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: v${{ inputs.version }} # mind the "v" prefix
-          omitBodyDuringUpdate: true
-          omitNameDuringUpdate: true
-          omitPrereleaseDuringUpdate: true
-          allowUpdates: true
-          artifacts: Flemozi-Release-Binaries/*,RELEASE.sha256sum,RELEASE.md5sum
+  #     - name: Upload Release Binaries (stable)
+  #       if: ${{ !inputs.dry_run && inputs.channel == 'stable' }}
+  #       uses: ncipollo/release-action@v1
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}
+  #         tag: v${{ inputs.version }} # mind the "v" prefix
+  #         omitBodyDuringUpdate: true
+  #         omitNameDuringUpdate: true
+  #         omitPrereleaseDuringUpdate: true
+  #         allowUpdates: true
+  #         artifacts: Flemozi-Release-Binaries/*,RELEASE.sha256sum,RELEASE.md5sum
 
-      - name: Upload Release Binaries (nightly)
-        if: ${{ !inputs.dry_run && inputs.channel == 'nightly' }}
-        uses: ncipollo/release-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: nightly
-          omitBodyDuringUpdate: true
-          omitNameDuringUpdate: true
-          omitPrereleaseDuringUpdate: true
-          allowUpdates: true
-          artifacts: Flemozi-Release-Binaries/*,RELEASE.sha256sum,RELEASE.md5sum
+  #     - name: Upload Release Binaries (nightly)
+  #       if: ${{ !inputs.dry_run && inputs.channel == 'nightly' }}
+  #       uses: ncipollo/release-action@v1
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}
+  #         tag: nightly
+  #         omitBodyDuringUpdate: true
+  #         omitNameDuringUpdate: true
+  #         omitPrereleaseDuringUpdate: true
+  #         allowUpdates: true
+  #         artifacts: Flemozi-Release-Binaries/*,RELEASE.sha256sum,RELEASE.md5sum
