@@ -27,67 +27,6 @@ env:
   FLUTTER_VERSION: '3.13.2'
 
 jobs:
-  windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: subosito/flutter-action@v2.10.0
-        with:
-          cache: true
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-
-      - name: Create Stable .env
-        if: ${{ inputs.channel == 'stable' }}
-        run: echo '${{ secrets.DOTENV_RELEASE }}' > .env
-
-      - name: Create Nightly .env
-        if: ${{ inputs.channel == 'nightly' }}
-        run: echo '${{ secrets.DOTENV_NIGHTLY }}' > .env
-      
-      - name: Replace pubspec version and BUILD_VERSION Env (nightly)
-        if: ${{ inputs.channel == 'nightly' }}
-        run: |
-          choco install yq -y
-          yq -i '.version |= sub("\+\d+", "+${{ inputs.channel }}.")' pubspec.yaml
-          yq -i '.version += strenv(GITHUB_RUN_NUMBER)' pubspec.yaml
-          "BUILD_VERSION=${{ inputs.version }}+${{ inputs.channel }}.${{ github.run_number }}" >> $env:GITHUB_ENV
-
-      - name: BUILD_VERSION Env (stable)
-        if: ${{ inputs.channel == 'stable' }}
-        run: |
-          "BUILD_VERSION=${{ inputs.version }}" >> $env:GITHUB_ENV
-
-      - name: Replace version in files
-        run: |
-          choco install sed make -y
-          sed -i "s/%{{VERSION}}%/${{ env.BUILD_VERSION }}/" windows/runner/Runner.rc
-          sed -i "s/%{{VERSION}}%/${{ env.BUILD_VERSION }}/" publishing/chocolatey/tools/VERIFICATION.txt
-          sed -i "s/%{{VERSION}}%/${{ env.BUILD_VERSION }}/" publishing/chocolatey/flemozi.nuspec
-
-      - name: Build Windows Executable
-        run: |
-          dart pub global activate flutter_distributor
-          flutter config --enable-windows-desktop
-          flutter pub get
-          make innoinstall
-          dart run build_runner build --delete-conflicting-outputs
-          flutter_distributor package --platform=windows --targets=exe --skip-clean
-          mv dist/**/flemozi-*+*-windows-setup.exe dist/Flemozi-windows-x86_64-setup.exe
-
-      - name: Create Chocolatey Package and set hash
-        if: ${{ inputs.channel == 'stable' }}
-        run: |
-          Set-Variable -Name HASH -Value (Get-FileHash dist\Flemozi-windows-x86_64-setup.exe).Hash
-          sed -i "s/%{{WIN_SHA256}}%/$HASH/" publishing/chocolatey/tools/VERIFICATION.txt
-          make choco
-          mv dist/flemozi.*.nupkg dist/Flemozi-windows-x86_64.nupkg
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: Flemozi-Release-Binaries
-          path: dist/
-
   linux:
     runs-on: ubuntu-latest
     steps:
@@ -199,64 +138,10 @@ jobs:
           name: Flemozi-Release-Binaries
           path: dist/
 
-  macos:
-    runs-on: macos-12
-    steps:
-      - uses: actions/checkout@v3
-      - uses: subosito/flutter-action@v2.10.0
-        with:
-          cache: true
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-
-      - name: Create Stable .env
-        if: ${{ inputs.channel == 'stable' }}
-        run: echo '${{ secrets.DOTENV_RELEASE }}' > .env
-
-      - name: Create Nightly .env
-        if: ${{ inputs.channel == 'nightly' }}
-        run: echo '${{ secrets.DOTENV_NIGHTLY }}' > .env
-
-      - name: Installing dependencies
-        run : |
-          brew install yq
-          npm install -g appdmg
-          dart pub global activate flutter_distributor
-
-      - name: Replace pubspec version and BUILD_VERSION Env (nightly)
-        if: ${{ inputs.channel == 'nightly' }}
-        run: |
-          yq -i '.version |= sub("\+\d+", "+${{ inputs.channel }}.")' pubspec.yaml
-          yq -i '.version += strenv(GITHUB_RUN_NUMBER)' pubspec.yaml
-          echo "BUILD_VERSION=${{ inputs.version }}+${{ inputs.channel }}.${{ github.run_number }}" >> $GITHUB_ENV
-
-      - name: BUILD_VERSION Env (stable)
-        if: ${{ inputs.channel == 'stable' }}
-        run: |
-          echo "BUILD_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
-
-      - name: Build Macos Package
-        run: |
-          flutter config --enable-macos-desktop
-          flutter pub get
-          dart run build_runner build --delete-conflicting-outputs
-          flutter_distributor package --platform=macos --targets=dmg --skip-clean
-
-      - name: Move files to dist
-        run: |
-          mv dist/**/flemozi-*-macos.dmg dist/Flemozi-macos-universal.dmg
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: Flemozi-Release-Binaries
-          path: |
-            dist/
-
   upload:
     runs-on: ubuntu-22.04
     needs:
-      - windows
       - linux
-      - macos
     steps:
       - uses: actions/download-artifact@v3
         with:
